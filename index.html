@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NGBS Notes & AI Brainstorming</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0; transition: all 0.3s ease; background:#121212; color:#f1f1f1; }
+  .container { max-width:1000px; margin:auto; padding:20px; }
+  h1,h2 { text-align:center; margin-bottom:10px; }
+  .card { background:#1e1e1e; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 6px 18px rgba(0,0,0,0.2); transition: all 0.3s ease; }
+  button { padding:10px 20px; border:none; border-radius:8px; background:#4a6cf7; color:white; cursor:pointer; margin-top:10px; transition:all 0.2s ease; }
+  button:hover { transform:scale(1.05); }
+  input, textarea, select { width:100%; padding:10px; margin-top:8px; border-radius:6px; border:1px solid #555; background:#2a2a2a; color:#f1f1f1; }
+  textarea { resize:vertical; }
+  .hidden { display:none; }
+  .note, .idea { background:#2a2a2a; padding:10px; border-radius:6px; margin-top:10px; }
+  .fadeIn { animation:fadeIn 0.5s ease; }
+  @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+  .controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+  label { margin-top:10px; display:block; }
+  .chart-container { max-width:100%; margin-top:20px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📓 NGBS Notes & AI Brainstorming</h1>
+
+  <!-- LOGIN -->
+  <div id="authSection" class="card fadeIn">
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="signUp()">Sign Up</button>
+    <button onclick="signIn()">Login</button>
+  </div>
+
+  <!-- APP -->
+  <div id="appSection" class="hidden">
+    <div class="controls">
+      <button onclick="logout()">Logout</button>
+      <select id="themeSelect" onchange="changeTheme()">
+        <option value="dark">Dark (default)</option>
+        <option value="light">Light</option>
+        <option value="grey">Grey</option>
+      </select>
+      <select id="fontSelect" onchange="changeFont()">
+        <option value="'Segoe UI', Arial, sans-serif">Segoe UI (default)</option>
+        <option value="'Arial', sans-serif">Arial</option>
+        <option value="'Courier New', monospace">Courier</option>
+        <option value="'Georgia', serif">Georgia</option>
+      </select>
+      <button onclick="toggleColorBlind()">Color-Blind Mode</button>
+    </div>
+
+    <!-- NOTES SECTION -->
+    <div class="card fadeIn">
+      <h2>Your Notes</h2>
+      <input id="noteTitle" placeholder="Note Title">
+      <textarea id="noteContent" placeholder="Note content..."></textarea>
+      <button onclick="addNote()">Add Note</button>
+      <button onclick="exportData()">Export Notes & Ideas</button>
+      <input type="file" id="importFile" onchange="importData(event)">
+      <div id="notes"></div>
+    </div>
+
+    <!-- AI BRAINSTORM SECTION -->
+    <div class="card fadeIn">
+      <h2>AI Brainstorm Notes</h2>
+      <input id="ideaTitle" placeholder="Idea Title">
+      <textarea id="ideaContent" placeholder="Brainstorm idea..."></textarea>
+      <input id="ideaTags" placeholder="Tags (comma separated)">
+      <button onclick="addIdea()">Add Idea</button>
+      <div id="ideas"></div>
+    </div>
+
+    <!-- TABLE & GRAPH SECTION -->
+    <div class="card fadeIn">
+      <h2>Charts & Table</h2>
+      <div class="chart-container">
+        <canvas id="notesChart"></canvas>
+      </div>
+      <button onclick="exportChart()">Export Chart as PNG</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  /* ========================================================
+     🔥🔥 SUPER CLEAR SUPABASE CONFIGURATION 🔥🔥
+     ===============================
+     ⚠️ IMPORTANT! ⚠️
+     Replace the placeholders below with your actual Supabase info.
+     STEP 1: Go to your Supabase dashboard → Settings → API
+     STEP 2: Copy the "API URL" → replace YOUR_SUPABASE_URL_HERE
+     STEP 3: Copy the "anon public key" → replace YOUR_SUPABASE_ANON_KEY_HERE
+     ⚠️ DO NOT DELETE OR MODIFY THE LINE BELOW
+  ======================================================== */
+  
+  const SUPABASE_URL = "https://tmrcweyoexkavowtpmow.supabase.co";   
+  // <<== REPLACE THIS with your Supabase API URL (e.g., https://xxxx.supabase.co)
+  
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcmN3ZXlvZXhrYXZvd3RwbW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyODgwMzAsImV4cCI6MjA4Nzg2NDAzMH0.c-MhRyS-Ayt6bSF11jNcHwKsHpfdp7jbJIiSqQQcJ54";   
+  // <<== REPLACE THIS with your Supabase anon public key (starts with "eyJ...")
+
+  // ✅ DO NOT CHANGE THIS LINE
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const authSection = document.getElementById("authSection");
+  const appSection = document.getElementById("appSection");
+
+  let colorBlindMode = false;
+  let chartInstance;
+
+  checkUser();
+
+  /* ========================= AUTH FUNCTIONS ========================= */
+  async function checkUser() {
+    const { data } = await supabase.auth.getSession();
+    if (data.session) showApp();
+  }
+
+  function showApp() {
+    authSection.classList.add("hidden");
+    appSection.classList.remove("hidden");
+    fetchNotes();
+    fetchIdeas();
+    updateChart();
+  }
+
+  async function signUp() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    await supabase.auth.signUp({ email, password });
+    alert("Check your email to confirm your account!");
+  }
+
+  async function signIn() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) showApp();
+    else alert("Login failed!");
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    location.reload();
+  }
+
+  /* ========================= THEME & FONT ========================= */
+  function changeTheme() {
+    const theme = document.getElementById("themeSelect").value;
+    if(theme==="dark"){document.body.style.background="#121212"; document.body.style.color="#f1f1f1";}
+    if(theme==="light"){document.body.style.background="#ffffff"; document.body.style.color="#121212";}
+    if(theme==="grey"){document.body.style.background="#888888"; document.body.style.color="#f1f1f1";}
+  }
+
+  function changeFont() {
+    const font = document.getElementById("fontSelect").value;
+    document.body.style.fontFamily = font;
+  }
+
+  function toggleColorBlind() {
+    colorBlindMode = !colorBlindMode;
+    document.body.style.filter = colorBlindMode ? "contrast(150%)" : "none";
+  }
+
+  /* ========================= NOTES FUNCTIONS ========================= */
+  async function addNote() {
+    const title = document.getElementById("noteTitle").value;
+    const content = document.getElementById("noteContent").value;
+    if(!title||!content)return alert("Fill title and content!");
+    const { data: userData } = await supabase.auth.getUser();
+    await supabase.from("notes").insert([{ user_id:userData.user.id,title,content }]);
+    document.getElementById("noteTitle").value="";
+    document.getElementById("noteContent").value="";
+    fetchNotes();
+    updateChart();
+  }
+
+  async function fetchNotes() {
+    const { data: userData } = await supabase.auth.getUser();
+    const { data } = await supabase.from("notes").select("*").eq("user_id",userData.user.id).order("id",{ascending:false});
+    const notesDiv = document.getElementById("notes");
+    notesDiv.innerHTML="";
+    data.forEach(n=>{
+      notesDiv.innerHTML+=`<div class="note"><strong>${n.title}</strong><p>${n.content}</p></div>`;
+    });
+  }
+
+  /* ========================= AI BRAINSTORM FUNCTIONS ========================= */
+  async function addIdea() {
+    const title = document.getElementById("ideaTitle").value;
+    const content = document.getElementById("ideaContent").value;
+    const tags = document.getElementById("ideaTags").value.split(",").map(t=>t.trim());
+    if(!title||!content)return alert("Fill title and content!");
+    const { data: userData } = await supabase.auth.getUser();
+    await supabase.from("ai_brainstorm").insert([{user_id:userData.user.id,title,content,tags}]);
+    document.getElementById("ideaTitle").value="";
+    document.getElementById("ideaContent").value="";
+    document.getElementById("ideaTags").value="";
+    fetchIdeas();
+    updateChart();
+  }
+
+  async function fetchIdeas() {
+    const { data: userData } = await supabase.auth.getUser();
+    const { data } = await supabase.from("ai_brainstorm").select("*").eq("user_id",userData.user.id).order("id",{ascending:false});
+    const ideasDiv = document.getElementById("ideas");
+    ideasDiv.innerHTML="";
+    data.forEach(i=>{
+      ideasDiv.innerHTML+=`<div class="idea"><strong>${i.title}</strong><p>${i.content}</p><p>Tags: ${i.tags.join(", ")}</p></div>`;
+    });
+  }
+
+  /* ========================= CHART FUNCTIONS ========================= */
+  async function updateChart() {
+    const { data: userData } = await supabase.auth.getUser();
+    const notesData = await supabase.from("notes").select("*").eq("user_id",userData.user.id);
+    const ideasData = await supabase.from("ai_brainstorm").select("*").eq("user_id",userData.user.id);
+
+    const ctx = document.getElementById("notesChart").getContext("2d");
+    if(chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+      type:'bar',
+      data:{
+        labels:['Notes','AI Ideas'],
+        datasets:[{
+          label:'Number of Items',
+          data:[notesData.data.length,ideasData.data.length],
+          backgroundColor:['#4a6cf7','#6c63ff']
+        }]
+      },
+      options:{ responsive:true, maintainAspectRatio:false }
+    });
+  }
+
+  /* ========================= EXPORT / IMPORT ========================= */
+  async function exportData() {
+    const { data: userData } = await supabase.auth.getUser();
+    const notesData = await supabase.from("notes").select("*").eq("user_id",userData.user.id);
+    const ideasData = await supabase.from("ai_brainstorm").select("*").eq("user_id",userData.user.id);
+    const exportObj = { notes:notesData.data, ai_ideas:ideasData.data };
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "ngbs_export.json"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importData(event){
+    const file = event.target.files[0];
+    if(!file)return;
+    const reader = new FileReader();
+    reader.onload = async function(e){
+      const obj = JSON.parse(e.target.result);
+      const { data: userData } = await supabase.auth.getUser();
+      if(obj.notes){
+        for(const n of obj.notes){
+          await supabase.from("notes").insert([{user_id:userData.user.id,title:n.title,content:n.content}]);
+        }
+      }
+      if(obj.ai_ideas){
+        for(const i of obj.ai_ideas){
+          await supabase.from("ai_brainstorm").insert([{user_id:userData.user.id,title:i.title,content:i.content,tags:i.tags}]);
+        }
+      }
+      fetchNotes(); fetchIdeas(); updateChart();
+      alert("Import complete!");
+    };
+    reader.readAsText(file);
+  }
+
+  function exportChart(){
+    if(!chartInstance)return alert("No chart to export!");
+    const link = document.createElement('a');
+    link.href = chartInstance.toBase64Image();
+    link.download = 'ngbs_chart.png';
+    link.click();
+  }
+</script>
+
+</body>
+</html>

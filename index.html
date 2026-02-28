@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NGBS Notes</title>
+<title>NGN Notes</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -26,7 +26,7 @@
 <body>
 
 <div class="container">
-  <h1>📓 NGBS Notes</h1>
+  <h1>📓 NGN Notes</h1>
 
   <!-- LOGIN -->
   <div id="authSection" class="card fadeIn">
@@ -79,7 +79,7 @@
 <script>
   /* ========================================================
      🔥🔥 SUPER CLEAR SUPABASE CONFIGURATION 🔥🔥
-     ===============================
+     ========================================================
      ⚠️ IMPORTANT! ⚠️
      Replace the placeholders below with your actual Supabase info.
      STEP 1: Go to your Supabase dashboard → Settings → API
@@ -208,7 +208,7 @@
     const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "ngbs_notes_export.json"; a.click();
+    a.href = url; a.download = "ngn_notes_export.json"; a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -234,7 +234,7 @@
     if(!chartInstance)return alert("No chart to export!");
     const link = document.createElement('a');
     link.href = chartInstance.toBase64Image();
-    link.download = 'ngbs_notes_chart.png';
+    link.download = 'ngn_notes_chart.png';
     link.click();
   }
 </script>

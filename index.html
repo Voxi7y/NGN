@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NGN Notes</title>
+<title>NGN</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -26,7 +26,7 @@
 <body>
 
 <div class="container">
-  <h1>📓 NGN Notes</h1>
+  <h1>📓 NGN</h1>
 
   <!-- LOGIN -->
   <div id="authSection" class="card fadeIn">
@@ -78,23 +78,11 @@
 
 <script>
   /* ========================================================
-     🔥🔥 SUPER CLEAR SUPABASE CONFIGURATION 🔥🔥
-     ========================================================
-     ⚠️ IMPORTANT! ⚠️
-     Replace the placeholders below with your actual Supabase info.
-     STEP 1: Go to your Supabase dashboard → Settings → API
-     STEP 2: Copy the "API URL" → replace YOUR_SUPABASE_URL_HERE
-     STEP 3: Copy the "anon public key" → replace YOUR_SUPABASE_ANON_KEY_HERE
-     ⚠️ DO NOT DELETE OR MODIFY THE LINE BELOW
+     🔥 SUPER CLEAR SUPABASE CONFIGURATION 🔥
+     Replace with your Supabase API URL and anon key
   ======================================================== */
-  
-  const SUPABASE_URL = "https://tmrcweyoexkavowtpmow.supabase.co";   
-  // <<== REPLACE THIS with your Supabase API URL (e.g., https://xxxx.supabase.co)
-  
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcmN3ZXlvZXhrYXZvd3RwbW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyODgwMzAsImV4cCI6MjA4Nzg2NDAzMH0.c-MhRyS-Ayt6bSF11jNcHwKsHpfdp7jbJIiSqQQcJ54";   
-  // <<== REPLACE THIS with your Supabase anon public key (starts with "eyJ...")
-
-  // ✅ DO NOT CHANGE THIS LINE
+  const SUPABASE_URL = "https://tmrcweyoexkavowtpmow.supabase.co"; // <<== Replace
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcmN3ZXlvZXhrYXZvd3RwbW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyODgwMzAsImV4cCI6MjA4Nzg2NDAzMH0.c-MhRyS-Ayt6bSF11jNcHwKsHpfdp7jbJIiSqQQcJ54"; // <<== Replace
   const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const authSection = document.getElementById("authSection");
@@ -105,7 +93,7 @@
 
   checkUser();
 
-  /* ========================= AUTH FUNCTIONS ========================= */
+  /* AUTH FUNCTIONS */
   async function checkUser() {
     const { data } = await supabase.auth.getSession();
     if (data.session) showApp();
@@ -138,7 +126,7 @@
     location.reload();
   }
 
-  /* ========================= THEME & FONT ========================= */
+  /* THEME & FONT */
   function changeTheme() {
     const theme = document.getElementById("themeSelect").value;
     if(theme==="dark"){document.body.style.background="#121212"; document.body.style.color="#f1f1f1";}
@@ -156,7 +144,7 @@
     document.body.style.filter = colorBlindMode ? "contrast(150%)" : "none";
   }
 
-  /* ========================= NOTES FUNCTIONS ========================= */
+  /* NOTES FUNCTIONS */
   async function addNote() {
     const title = document.getElementById("noteTitle").value;
     const content = document.getElementById("noteContent").value;
@@ -179,7 +167,7 @@
     });
   }
 
-  /* ========================= CHART FUNCTIONS ========================= */
+  /* CHART FUNCTIONS */
   async function updateChart() {
     const { data: userData } = await supabase.auth.getUser();
     const notesData = await supabase.from("notes").select("*").eq("user_id",userData.user.id);
@@ -200,7 +188,7 @@
     });
   }
 
-  /* ========================= EXPORT / IMPORT ========================= */
+  /* EXPORT / IMPORT */
   async function exportData() {
     const { data: userData } = await supabase.auth.getUser();
     const notesData = await supabase.from("notes").select("*").eq("user_id",userData.user.id);

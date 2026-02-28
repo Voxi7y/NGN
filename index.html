@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NGBS Notes & AI Brainstorming</title>
+<title>NGBS Notes</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -16,7 +16,7 @@
   input, textarea, select { width:100%; padding:10px; margin-top:8px; border-radius:6px; border:1px solid #555; background:#2a2a2a; color:#f1f1f1; }
   textarea { resize:vertical; }
   .hidden { display:none; }
-  .note, .idea { background:#2a2a2a; padding:10px; border-radius:6px; margin-top:10px; }
+  .note { background:#2a2a2a; padding:10px; border-radius:6px; margin-top:10px; }
   .fadeIn { animation:fadeIn 0.5s ease; }
   @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
   .controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
@@ -27,7 +27,7 @@
 <body>
 
 <div class="container">
-  <h1>📓 NGBS Notes & AI Brainstorming</h1>
+  <h1>📓 NGBS Notes</h1>
 
   <!-- LOGIN -->
   <div id="authSection" class="card fadeIn">
@@ -61,30 +61,19 @@
       <input id="noteTitle" placeholder="Note Title">
       <textarea id="noteContent" placeholder="Note content..."></textarea>
       <button onclick="addNote()">Add Note</button>
-      <button onclick="exportData()">Export Notes & Ideas</button>
+      <button onclick="exportData()">Export Notes</button>
       <input type="file" id="importFile" onchange="importData(event)">
       <div id="notes"></div>
     </div>
 
-    <!-- AI BRAINSTORM SECTION -->
+    <!-- CHART SECTION -->
     <div class="card fadeIn">
-      <h2>AI Brainstorm Notes</h2>
-      <input id="ideaTitle" placeholder="Idea Title">
-      <textarea id="ideaContent" placeholder="Brainstorm idea..."></textarea>
-      <input id="ideaTags" placeholder="Tags (comma separated)">
-      <button onclick="addIdea()">Add Idea</button>
-      <div id="ideas"></div>
-    </div>
-
-    <!-- TABLE & GRAPH SECTION -->
-    <div class="card fadeIn">
-      <h2>Charts & Table</h2>
+      <h2>Notes Chart</h2>
       <div class="chart-container">
         <canvas id="notesChart"></canvas>
       </div>
       <button onclick="exportChart()">Export Chart as PNG</button>
     </div>
-
   </div>
 </div>
 
@@ -127,7 +116,6 @@
     authSection.classList.add("hidden");
     appSection.classList.remove("hidden");
     fetchNotes();
-    fetchIdeas();
     updateChart();
   }
 
@@ -192,47 +180,21 @@
     });
   }
 
-  /* ========================= AI BRAINSTORM FUNCTIONS ========================= */
-  async function addIdea() {
-    const title = document.getElementById("ideaTitle").value;
-    const content = document.getElementById("ideaContent").value;
-    const tags = document.getElementById("ideaTags").value.split(",").map(t=>t.trim());
-    if(!title||!content)return alert("Fill title and content!");
-    const { data: userData } = await supabase.auth.getUser();
-    await supabase.from("ai_brainstorm").insert([{user_id:userData.user.id,title,content,tags}]);
-    document.getElementById("ideaTitle").value="";
-    document.getElementById("ideaContent").value="";
-    document.getElementById("ideaTags").value="";
-    fetchIdeas();
-    updateChart();
-  }
-
-  async function fetchIdeas() {
-    const { data: userData } = await supabase.auth.getUser();
-    const { data } = await supabase.from("ai_brainstorm").select("*").eq("user_id",userData.user.id).order("id",{ascending:false});
-    const ideasDiv = document.getElementById("ideas");
-    ideasDiv.innerHTML="";
-    data.forEach(i=>{
-      ideasDiv.innerHTML+=`<div class="idea"><strong>${i.title}</strong><p>${i.content}</p><p>Tags: ${i.tags.join(", ")}</p></div>`;
-    });
-  }
-
   /* ========================= CHART FUNCTIONS ========================= */
   async function updateChart() {
     const { data: userData } = await supabase.auth.getUser();
     const notesData = await supabase.from("notes").select("*").eq("user_id",userData.user.id);
-    const ideasData = await supabase.from("ai_brainstorm").select("*").eq("user_id",userData.user.id);
 
     const ctx = document.getElementById("notesChart").getContext("2d");
     if(chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx, {
       type:'bar',
       data:{
-        labels:['Notes','AI Ideas'],
+        labels:['Notes'],
         datasets:[{
-          label:'Number of Items',
-          data:[notesData.data.length,ideasData.data.length],
-          backgroundColor:['#4a6cf7','#6c63ff']
+          label:'Number of Notes',
+          data:[notesData.data.length],
+          backgroundColor:['#4a6cf7']
         }]
       },
       options:{ responsive:true, maintainAspectRatio:false }
@@ -243,12 +205,11 @@
   async function exportData() {
     const { data: userData } = await supabase.auth.getUser();
     const notesData = await supabase.from("notes").select("*").eq("user_id",userData.user.id);
-    const ideasData = await supabase.from("ai_brainstorm").select("*").eq("user_id",userData.user.id);
-    const exportObj = { notes:notesData.data, ai_ideas:ideasData.data };
+    const exportObj = { notes:notesData.data };
     const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "ngbs_export.json"; a.click();
+    a.href = url; a.download = "ngbs_notes_export.json"; a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -264,12 +225,7 @@
           await supabase.from("notes").insert([{user_id:userData.user.id,title:n.title,content:n.content}]);
         }
       }
-      if(obj.ai_ideas){
-        for(const i of obj.ai_ideas){
-          await supabase.from("ai_brainstorm").insert([{user_id:userData.user.id,title:i.title,content:i.content,tags:i.tags}]);
-        }
-      }
-      fetchNotes(); fetchIdeas(); updateChart();
+      fetchNotes(); updateChart();
       alert("Import complete!");
     };
     reader.readAsText(file);
@@ -279,7 +235,7 @@
     if(!chartInstance)return alert("No chart to export!");
     const link = document.createElement('a');
     link.href = chartInstance.toBase64Image();
-    link.download = 'ngbs_chart.png';
+    link.download = 'ngbs_notes_chart.png';
     link.click();
   }
 </script>

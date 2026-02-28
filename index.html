@@ -79,10 +79,11 @@
 <script>
   /* ========================================================
      🔥 SUPER CLEAR SUPABASE CONFIGURATION 🔥
+     ========================================================
      Replace with your Supabase API URL and anon key
   ======================================================== */
-  const SUPABASE_URL = "https://tmrcweyoexkavowtpmow.supabase.co"; // <<== Replace
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcmN3ZXlvZXhrYXZvd3RwbW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyODgwMzAsImV4cCI6MjA4Nzg2NDAzMH0.c-MhRyS-Ayt6bSF11jNcHwKsHpfdp7jbJIiSqQQcJ54"; // <<== Replace
+  const SUPABASE_URL = "https://tmrcweyoexkavowtpmow.supabase.co"; // <<== Replace with your Supabase API URL
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtcmN3ZXlvZXhrYXZvd3RwbW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyODgwMzAsImV4cCI6MjA4Nzg2NDAzMH0.c-MhRyS-Ayt6bSF11jNcHwKsHpfdp7jbJIiSqQQcJ54"; // <<== Replace with your Supabase anon key
   const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const authSection = document.getElementById("authSection");
@@ -196,7 +197,7 @@
     const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "ngn_notes_export.json"; a.click();
+    a.href = url; a.download = "ngn_export.json"; a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -222,7 +223,7 @@
     if(!chartInstance)return alert("No chart to export!");
     const link = document.createElement('a');
     link.href = chartInstance.toBase64Image();
-    link.download = 'ngn_notes_chart.png';
+    link.download = 'ngn_chart.png';
     link.click();
   }
 </script>
